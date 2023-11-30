@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
 )
 
@@ -8,10 +10,10 @@ type Content struct {
 	gorm.Model `json:"-"`
 
 	UUID      string `json:"id" gorm:"uuid"`
-	GroupUUID string `json:"group_id"`
 	Type      int    `json:"type"`
 	Category  string `json:"-"`
 	Title     string `json:"title"`
+	ShowName  string `json:"-"`
 	EnableAds int    `json:"enable_ads"`
 	IsPremium int    `json:"is_premium"`
 	People    struct {
@@ -27,7 +29,6 @@ type Content struct {
 	Tags     []struct {
 		Name string `json:"name"`
 		Type string `json:"type"`
-		Slug string `json:"slug"`
 	} `json:"tags" sql:"-" gorm:"-"`
 	Country     string `json:"-"`
 	Genre       string `json:"-"`
@@ -37,18 +38,22 @@ type Content struct {
 		Thumbnail    string `json:"thumbnail_v4"`
 		Poster       string `json:"poster_v4"`
 	} `json:"images" sql:"-" gorm:"-"`
-	Thumbnail           string  `json:"-"`
-	Poster              string  `json:"-"`
-	Rating              float64 `json:"avg_rate"`
-	TotalRating         int     `json:"total_rate"`
-	Episode             int     `json:"episode"`
-	CurrentEpisode      string  `json:"current_episode"`
-	ContentProviderUUID string  `json:"content_provider_id"`
-	Seo                 struct {
+	Thumbnail   string  `json:"-"`
+	Poster      string  `json:"-"`
+	Rating      float64 `json:"avg_rate"`
+	TotalRating int     `json:"total_rate"`
+	Seo         struct {
 		Slug string `json:"slug"`
 	} `json:"seo" sql:"-" gorm:"-"`
-	IsEnd            bool   `json:"is_end"`
-	IsDownloadable   int    `json:"is_downloadable"`
+	IsEnd          bool `json:"is_end"`
+	IsDownloadable int  `json:"is_downloadable"`
+	Movie          struct {
+		Title          string `json:"title"`
+		Episode        int    `json:"episode"`
+		CurrentEpisode string `json:"current_episode"`
+	} `json:"movie" sql:"-" gorm:"-"`
+	Episode          int    `json:"-"`
+	CurrentEpisode   string `json:"-"`
 	PublicDate       int    `json:"created_at"`
 	IsComingSoon     int    `json:"is_coming_soon"`
 	TrialDuration    int    `json:"trial_duration"`
@@ -74,7 +79,7 @@ func (c *Content) Mark() {
 			} else if tag.Type == "category" {
 				c.Category = tag.Name
 			} else if tag.Type == "genre" {
-				c.Genre = tag.Name
+				c.Genre += fmt.Sprint(tag.Name, " ")
 			}
 		}
 	}
@@ -84,4 +89,7 @@ func (c *Content) Mark() {
 		c.Thumbnail = c.Images.Thumbnail
 	}
 	c.Poster = c.Images.Poster
+	c.Episode = c.Movie.Episode
+	c.CurrentEpisode = c.Movie.CurrentEpisode
+	c.ShowName = c.Movie.Title
 }

@@ -15,6 +15,8 @@ func main() {
 	} else {
 		port := os.Getenv("PORT")
 		models := []interface{}{
+			&entity.WatchedRibbon{},
+			&entity.WatchedContent{},
 			&entity.Content{},
 		}
 		db.AutoMigrate(models...)

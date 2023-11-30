@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"go-vieon-content-crawling-api/src/business"
 	"go-vieon-content-crawling-api/src/constants"
 	"go-vieon-content-crawling-api/src/entity"
@@ -23,21 +22,24 @@ var (
 func SyncCrawlContent(db *gorm.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		sqlStorage := storage.NewSQLStore(db)
+		ribbonStorage := storage.NewRibbonStore(sqlStorage)
 		contentStorage := storage.NewContentStore(sqlStorage)
+		ribbonBusiness := business.NewRibbonBusiness(ribbonStorage)
 		contentBusiness := business.NewContentBusiness(contentStorage)
 
-		if ribbonSlug, err := contentBusiness.GetRibbonSlug("https://vieon.vn"); err != nil {
+		if ribbonSlug, err := ribbonBusiness.GetRibbonSlug("https://vieon.vn"); err != nil {
 			ctx.JSON(http.StatusInternalServerError, entity.NewStandardResponse(nil, http.StatusInternalServerError, constants.StatusInternalServerError, err.Error(), GetRibbonSlugFailure))
-		} else if ribbonIds, ribbonIdsFilePath, err := contentBusiness.GetRibbonId(ribbonSlug); err != nil {
+		} else if ribbonIds, err := ribbonBusiness.GetRibbonId(ctx, ribbonSlug); err != nil {
 			ctx.JSON(http.StatusInternalServerError, entity.NewStandardResponse(nil, http.StatusInternalServerError, constants.StatusInternalServerError, err.Error(), GetRibbonIdFailure))
-		} else if contentIds, contentIdsFilePath, err := contentBusiness.GetContentId(ribbonIds); err != nil {
+		} else if contentIds, err := contentBusiness.GetContentId(ctx, ribbonIds); err != nil {
 			ctx.JSON(http.StatusInternalServerError, entity.NewStandardResponse(nil, http.StatusInternalServerError, constants.StatusInternalServerError, err.Error(), GetContentIdFailure))
-		} else if err := contentBusiness.SyncCrawlContent(ctx, contentIds[0:10]); err != nil {
+		} else if err := contentBusiness.SyncCrawlContent(ctx, contentIds[1:10]); err != nil {
 			ctx.JSON(http.StatusOK, entity.NewStandardResponse(nil, http.StatusOK, constants.StatusOK, err.Error(), SyncCrawlContentsFailure))
 		} else {
-			fmt.Println("Save ribbonIds in: ", *ribbonIdsFilePath)
-			fmt.Println("Save contentIds in: ", *contentIdsFilePath)
-			ctx.JSON(http.StatusOK, entity.NewStandardResponse(len(contentIds), http.StatusOK, constants.StatusOK, "", SyncCrawlContentsSuccess))
+			ctx.JSON(http.StatusOK, entity.NewStandardResponse(gin.H{
+				"ribbonIds":  len(ribbonIds),
+				"contentIds": len(contentIds),
+			}, http.StatusOK, constants.StatusOK, "", SyncCrawlContentsSuccess))
 		}
 	}
 }
