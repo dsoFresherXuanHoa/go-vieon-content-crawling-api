@@ -33,7 +33,7 @@ func SyncCrawlContent(db *gorm.DB) gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, entity.NewStandardResponse(nil, http.StatusInternalServerError, constants.StatusInternalServerError, err.Error(), GetRibbonIdFailure))
 		} else if contentIds, err := contentBusiness.GetContentId(ctx, ribbonIds); err != nil {
 			ctx.JSON(http.StatusInternalServerError, entity.NewStandardResponse(nil, http.StatusInternalServerError, constants.StatusInternalServerError, err.Error(), GetContentIdFailure))
-		} else if err := contentBusiness.SyncCrawlContent(ctx, contentIds[1:10]); err != nil {
+		} else if err := contentBusiness.SyncCrawlContent(ctx, contentIds); err != nil {
 			ctx.JSON(http.StatusOK, entity.NewStandardResponse(nil, http.StatusOK, constants.StatusOK, err.Error(), SyncCrawlContentsFailure))
 		} else {
 			ctx.JSON(http.StatusOK, entity.NewStandardResponse(gin.H{

@@ -67,14 +67,17 @@ func (business *contentBusiness) GetContentId(ctx context.Context, ribbonIds []s
 	if watchedContentIds, err := business.contentStorage.FindAllWatchedContentIds(ctx); err != nil {
 		return nil, err
 	} else {
+		var result []string
+		fmt.Println("Watched Content: ", len(watchedContentIds), len(contentIds))
 		for _, contentId := range targetContentIds {
 			if !slices.Contains(watchedContentIds, contentId) {
 				if _, err := business.contentStorage.SaveWatchedContent(ctx, entity.WatchedContent{UUID: contentId}); err != nil {
 					return nil, err
 				}
+				result = append(result, contentId)
 			}
 		}
-		return targetContentIds, nil
+		return result, nil
 	}
 }
 

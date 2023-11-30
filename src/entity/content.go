@@ -9,7 +9,7 @@ import (
 type Content struct {
 	gorm.Model `json:"-"`
 
-	UUID      string `json:"id" gorm:"uuid"`
+	UUID      string `json:"id" gorm:"uuid;unique"`
 	Type      int    `json:"type"`
 	Category  string `json:"-"`
 	Title     string `json:"title"`

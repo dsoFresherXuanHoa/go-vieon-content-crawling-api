@@ -6,6 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gocolly/colly v1.2.0
 	github.com/joho/godotenv v1.5.1
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/urfave/cli/v2 v2.25.7
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
 	gorm.io/driver/mysql v1.5.2
