@@ -28,6 +28,15 @@ func (s *ribbonStorage) SaveWatchedRibbon(ctx context.Context, content entity.Wa
 	return &content.UUID, nil
 }
 
+func (s *ribbonStorage) BatchSaveWatchedRibbon(ctx context.Context, contents entity.WatchedRibbons) (*int, error) {
+	totalRibbon := len(contents)
+	if err := s.sql.db.Table(entity.WatchedRibbon{}.TableName()).CreateInBatches(&contents, 10000).Error; err != nil {
+		fmt.Println("Error while save watched ribbon to database: " + err.Error())
+		return nil, ErrSaveWatchedRibbon2DB
+	}
+	return &totalRibbon, nil
+}
+
 func (s *ribbonStorage) FindAllWatchedRibbonIds(ctx context.Context) ([]string, error) {
 	var watchedRibbons entity.WatchedRibbons
 	if err := s.sql.db.Table(entity.WatchedRibbon{}.TableName()).Find(&watchedRibbons).Error; err != nil {

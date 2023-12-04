@@ -22,6 +22,7 @@ func main() {
 		db.AutoMigrate(models...)
 		router := gin.Default()
 		rest.NewRouteConfig(router).Config(db)
+
 		router.Run(":" + port)
 	}
 }

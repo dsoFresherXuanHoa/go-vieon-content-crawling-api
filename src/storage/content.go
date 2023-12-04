@@ -26,7 +26,16 @@ func (s *contentStorage) SaveContent(ctx context.Context, content entity.Content
 		fmt.Println("Error while save content to database: " + err.Error())
 		return nil, ErrSaveContent2DB
 	}
-	return &content.UUID, nil
+	return &content.UUID, err
+}
+
+func (s *contentStorage) BatchSaveContent(ctx context.Context, contents entity.Contents) (*int, error) {
+	totalContent := len(contents)
+	if err := s.sql.db.Table(entity.Content{}.TableName()).CreateInBatches(contents, 10000).Error; err != nil {
+		fmt.Println("Error while batch save content to database: " + err.Error())
+		return nil, ErrSaveContent2DB
+	}
+	return &totalContent, nil
 }
 
 func (s *contentStorage) SaveWatchedContent(ctx context.Context, content entity.WatchedContent) (uuid *string, err error) {
@@ -35,6 +44,15 @@ func (s *contentStorage) SaveWatchedContent(ctx context.Context, content entity.
 		return nil, ErrSaveWatchedContent2DB
 	}
 	return &content.UUID, nil
+}
+
+func (s *contentStorage) BatchSaveWatchedContent(ctx context.Context, contents entity.WatchedContents) (*int, error) {
+	totalContent := len(contents)
+	if err := s.sql.db.Table(entity.WatchedContent{}.TableName()).CreateInBatches(&contents, 10000).Error; err != nil {
+		fmt.Println("Error while save watched content to database: " + err.Error())
+		return nil, ErrSaveWatchedContent2DB
+	}
+	return &totalContent, nil
 }
 
 func (s *contentStorage) FindAllWatchedContentIds(ctx context.Context) ([]string, error) {

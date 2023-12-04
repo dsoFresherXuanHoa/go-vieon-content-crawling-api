@@ -10,6 +10,7 @@ import (
 
 	"github.com/gocolly/colly"
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
 )
 
 type ribbonProps struct {
@@ -46,6 +47,7 @@ var (
 
 type RibbonStorage interface {
 	SaveWatchedRibbon(ctx context.Context, content entity.WatchedRibbon) (uuid *string, err error)
+	BatchSaveWatchedRibbon(ctx context.Context, contents entity.WatchedRibbons) (*int, error)
 	FindAllWatchedRibbonIds(ctx context.Context) ([]string, error)
 }
 
@@ -109,12 +111,14 @@ func (business *ribbonBusiness) GetRibbonId(ctx context.Context, urls []string) 
 	if watchedRibbonIds, err := business.ribbonStorage.FindAllWatchedRibbonIds(ctx); err != nil {
 		return nil, err
 	} else {
+		var targetWatchedRibbons []entity.WatchedRibbon
 		for _, ribbonId := range targetRibbonIds {
 			if !slices.Contains(watchedRibbonIds, ribbonId) {
-				if _, err := business.ribbonStorage.SaveWatchedRibbon(ctx, entity.WatchedRibbon{UUID: ribbonId}); err != nil {
-					return nil, err
-				}
+				targetWatchedRibbons = append(targetWatchedRibbons, entity.WatchedRibbon{Model: gorm.Model{}, UUID: ribbonId})
 			}
+		}
+		if _, err := business.ribbonStorage.BatchSaveWatchedRibbon(ctx, targetWatchedRibbons); err != nil {
+			return nil, err
 		}
 		return targetRibbonIds, nil
 	}

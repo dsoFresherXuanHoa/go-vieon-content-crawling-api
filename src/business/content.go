@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"go-vieon-content-crawling-api/src/entity"
 	"go-vieon-content-crawling-api/src/utils"
+	"math"
 	"strconv"
 
 	"golang.org/x/exp/slices"
+	"gorm.io/gorm"
 )
 
 var (
@@ -23,7 +25,9 @@ var (
 
 type ContentStorage interface {
 	SaveContent(ctx context.Context, content entity.Content) (uuid *string, err error)
+	BatchSaveContent(ctx context.Context, contents entity.Contents) (*int, error)
 	SaveWatchedContent(ctx context.Context, content entity.WatchedContent) (uuid *string, err error)
+	BatchSaveWatchedContent(ctx context.Context, contents entity.WatchedContents) (*int, error)
 	FindAllWatchedContentIds(ctx context.Context) ([]string, error)
 }
 
@@ -68,31 +72,46 @@ func (business *contentBusiness) GetContentId(ctx context.Context, ribbonIds []s
 		return nil, err
 	} else {
 		var result []string
-		fmt.Println("Watched Content: ", len(watchedContentIds), len(contentIds))
+		var targetWatchedContents []entity.WatchedContent
+		fmt.Println("Watched Content: ", len(watchedContentIds), len(contentIds), len(targetContentIds))
 		for _, contentId := range targetContentIds {
-			if !slices.Contains(watchedContentIds, contentId) {
-				if _, err := business.contentStorage.SaveWatchedContent(ctx, entity.WatchedContent{UUID: contentId}); err != nil {
-					return nil, err
-				}
+			if !slices.Contains(watchedContentIds, contentId) && contentId != "" {
+				targetWatchedContents = append(targetWatchedContents, entity.WatchedContent{Model: gorm.Model{}, UUID: contentId})
 				result = append(result, contentId)
 			}
+
+		}
+		fmt.Println(len(targetWatchedContents))
+		fmt.Println(len(result))
+		if _, err := business.contentStorage.BatchSaveWatchedContent(ctx, targetWatchedContents); err != nil {
+			return nil, err
 		}
 		return result, nil
 	}
 }
 
 func (business *contentBusiness) SyncCrawlContent(ctx context.Context, contentIds []string) error {
+	var targetContents []entity.Content
 	for _, contentId := range contentIds {
 		url := "https://api.vieon.vn/backend/cm/v5/content/" + contentId
 		if content, err := utils.NewNetUtil().CrawlContent(url); err != nil {
 			fmt.Println("Error crawling content by id " + contentId + ": " + err.Error())
 			return ErrCrawlingContentById
-		} else {
+		} else if content.Title != "" {
 			content.Mark()
-			if _, err := business.contentStorage.SaveContent(ctx, *content); err != nil {
-				fmt.Println("Error while save content: " + contentId + ": " + err.Error())
-				return err
-			}
+			targetContents = append(targetContents, *content)
+		}
+	}
+	totalContent := len(targetContents)
+	totalSaveTime := (totalContent / 2000) + 1
+	fmt.Println(totalSaveTime, totalContent)
+	for i := 0; i < totalSaveTime; i++ {
+		startIndex := i * 2000
+		endIndex := int(math.Min(float64(startIndex+2000), float64(len(targetContents))))
+		fmt.Println(startIndex, endIndex)
+		if _, err := business.contentStorage.BatchSaveContent(ctx, targetContents[startIndex:endIndex]); err != nil {
+			fmt.Println("Error while save batch content: " + err.Error())
+			return err
 		}
 	}
 	return nil
