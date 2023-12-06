@@ -23,6 +23,10 @@ func main() {
 		router := gin.Default()
 		rest.NewRouteConfig(router).Config(db)
 
+		cron := configs.NewCronClient()
+		cron.Instance()
+		cron.Schedule()
+
 		router.Run(":" + port)
 	}
 }

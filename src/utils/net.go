@@ -7,6 +7,7 @@ import (
 	"go-vieon-content-crawling-api/src/entity"
 	"io"
 	"net/http"
+	"os"
 )
 
 var (
@@ -59,4 +60,17 @@ func (netUtil) CrawlRibbon(url string) (content *entity.Ribbon, err error) {
 			return &ribbon, nil
 		}
 	}
+}
+
+func (netUtil) ScheduleCrawlActive() error {
+	fmt.Println("Preparing to send schedule active message...")
+	baseApiEndpoint := os.Getenv("BASE_API_ENDPOINT")
+	crawContentEndPoint := "/contents/crawl/sync"
+	if res, err := http.Get(fmt.Sprint(baseApiEndpoint, crawContentEndPoint)); err != nil {
+		fmt.Println("Error while send schedule active message: " + err.Error())
+		return err
+	} else {
+		fmt.Println("Schedule active message has been send: " + res.Status)
+	}
+	return nil
 }
